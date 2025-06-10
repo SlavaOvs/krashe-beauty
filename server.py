@@ -38,7 +38,7 @@ Base.metadata.create_all(bind=engine)
 def seed():
     db=SessionLocal()
     if db.query(User).count()==0:
-        for name,l,p in [('Анна','anna','anna123'),('Вика','vika','vika123'),('Ольга','olga','olga123'),('Мария','maria','maria123')]:
+        for name,l,p in [('Анна','anna','anna123'),('Катя','kate','ovs123'),('Ольга','olga','olga123'),('Мария','maria','maria123')]:
             db.add(User(name=name,login=l,password_hash=bcrypt.hash(p)))
         db.commit();db.close()
 seed()
