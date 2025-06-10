@@ -1,1 +1,217 @@
-<!DOCTYPE html><html lang='ru'><head><meta charset='utf-8'><title>Beauty Booking</title><script src='https://cdn.tailwindcss.com'></script><script src='https://cdn.jsdelivr.net/npm/axios@1.6.8/dist/axios.min.js'></script></head><body>Рабочий фронтенд. Авторизуйтесь.<script>console.log('frontend placeholder');</script></body></html>
+<!DOCTYPE html>
+<html lang="ru" class="h-full">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Календарь студии красоты</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Шрифт Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:'Inter',sans-serif}
+    .tab-btn.active{border-color:#3b82f6;color:#3b82f6;background:#eff6ff}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+  </style>
+</head>
+<body class="h-full bg-gray-50 text-gray-800">
+
+<!-- ───── экран логина ───── -->
+<div id="login-screen" class="h-full flex flex-col items-center justify-center p-4">
+  <div class="w-full max-w-sm bg-white rounded-xl shadow p-6">
+    <h2 class="text-2xl font-bold mb-4 text-center">Вход мастера</h2>
+    <input id="login-input" class="w-full mb-3 p-2 border rounded" placeholder="Логин"/>
+    <input id="password-input" type="password" class="w-full mb-4 p-2 border rounded" placeholder="Пароль"/>
+    <button id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Войти</button>
+    <p id="login-err" class="text-red-500 mt-2 text-center"></p>
+  </div>
+</div>
+
+<!-- ───── приложение ───── -->
+<div id="app" class="h-full flex-col p-4 max-w-7xl mx-auto hidden">
+  <header class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div><h1 class="text-3xl font-bold">Календарь записи</h1><p id="welcome" class="text-gray-500"></p></div>
+    <button id="logout-btn" class="text-sm underline">Выйти</button>
+  </header>
+
+  <!-- вкладки -->
+  <div class="border-b mb-6">
+    <nav class="flex -mb-px space-x-4">
+      <button data-tab="schedule" class="tab-btn active py-3 px-4 border-b-2 font-medium text-sm">🗓️ Расписание</button>
+      <button data-tab="records"  class="tab-btn py-3 px-4 border-b-2 font-medium text-sm text-gray-500">🗂️ Записи</button>
+      <button data-tab="settings" class="tab-btn py-3 px-4 border-b-2 font-medium text-sm text-gray-500">⚙️ Настройки</button>
+    </nav>
+  </div>
+
+  <!-- Расписание -->
+  <section id="schedule" class="tab-content active">
+    <div class="bg-white p-6 rounded-xl shadow border">
+      <div class="flex items-center space-x-4 mb-6 pb-4 border-b">
+        <label class="font-medium">Дата:</label>
+        <input type="date" id="date-picker" class="p-2 border rounded-lg"/>
+      </div>
+      <table class="w-full text-sm text-left">
+        <thead class="text-xs uppercase bg-gray-50"><tr><th class="py-3 px-6 w-1/4">Время</th><th class="py-3 px-6">Статус</th></tr></thead>
+        <tbody id="schedule-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Записи -->
+  <section id="records" class="tab-content">
+    <div class="bg-white p-6 rounded-xl shadow border">
+      <h2 class="text-xl font-semibold mb-4">Добавить запись</h2>
+      <div id="err" class="hidden mb-4 p-3 bg-red-100 text-red-700 rounded"></div>
+
+      <form id="add-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div><label class="block mb-1">Клиент</label><input id="client" required class="w-full p-2 border rounded"/></div>
+        <div><label class="block mb-1">Время</label><input id="time" type="time" required class="w-full p-2 border rounded"/></div>
+        <div><label class="block mb-1">Длительность (мин)</label><input id="dur" type="number" value="120" min="30" step="15" required class="w-full p-2 border rounded"/></div>
+        <button class="md:col-span-3 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Добавить</button>
+      </form>
+
+      <h2 class="text-xl font-semibold mt-8 mb-4">Все записи</h2>
+      <table class="w-full text-sm text-left">
+        <thead class="text-xs uppercase bg-gray-50"><tr>
+          <th class="py-3 px-4">Дата</th><th class="py-3 px-4">Время</th><th class="py-3 px-4">Мастер</th><th class="py-3 px-4">Клиент</th><th class="py-3 px-4"></th>
+        </tr></thead>
+        <tbody id="records-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Настройки -->
+  <section id="settings" class="tab-content">
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded-xl shadow border"><h3 class="font-semibold mb-2">Мой логин</h3><p id="my-login" class="bg-gray-50 p-2 rounded"></p></div>
+      <div class="bg-white p-6 rounded-xl shadow border"><h3 class="font-semibold mb-2">Мой цвет</h3><div id="my-color" class="w-10 h-10 rounded-full"></div></div>
+    </div>
+  </section>
+</div>
+
+<!-- Библиотеки -->
+<script src="https://cdn.jsdelivr.net/npm/axios@1.6.8/dist/axios.min.js"></script>
+<script>
+const API = '';                         // same-origin
+const COLORS = ['#f87171','#34d399','#60a5fa','#fbbf24'];
+let token   = localStorage.token  || '';
+let me      = JSON.parse(localStorage.me || 'null');
+
+const q = sel => document.querySelector(sel);
+const auth = () => ({ headers:{token} });
+
+/* ───── вкладки */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick=e=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    q('#'+e.currentTarget.dataset.tab).classList.add('active');
+  };
+});
+
+/* ───── логин */
+async function login(){
+  const login = q('#login-input').value.trim();
+  const password = q('#password-input').value.trim();
+  if(!login||!password) return;
+  try{
+    const r = await axios.post(API+'/login',{login,password});
+    token = r.data.user_id;
+    me = {id:r.data.user_id,name:r.data.name,login};
+    localStorage.token = token;
+    localStorage.me = JSON.stringify(me);
+    initApp();
+  }catch(e){
+    q('#login-err').textContent = e.response?.data?.detail || 'Ошибка';
+  }
+}
+q('#login-btn').onclick = login;
+q('#logout-btn').onclick = ()=>{localStorage.clear();location.reload()};
+
+/* ───── API */
+const fetchApps   = () => axios.get(API+'/appointments').then(r=>r.data);
+const addApp      = data => axios.post(API+'/add',data,auth());
+const deleteApp   = id   => axios.delete(API+'/delete/'+id,auth());
+
+/* ───── UI helpers */
+function renderSchedule(apps){
+  const date = q('#date-picker').value;
+  const body = q('#schedule-body');
+  body.innerHTML='';
+  const slots=[...Array(13).keys()].map(i=>String(i+9).padStart(2,'0')+':00');
+  slots.forEach(s=>{
+    const a = apps.find(x=>x.start_time.startsWith(date) && x.start_time.includes(s));
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="py-2 px-4">${s}</td>`;
+    const td=document.createElement('td');td.className='py-2 px-4';
+    if(a){
+      td.innerHTML=`<span class="font-semibold">${a.master_name}</span> — ${a.client_name}`;
+      td.style.background=a.color;td.style.color='#fff';
+    }else{
+      td.textContent='Свободно';td.classList.add('text-green-600');
+    }
+    tr.appendChild(td);body.appendChild(tr);
+  });
+}
+function renderRecords(apps){
+  const body=q('#records-body');body.innerHTML='';
+  apps.sort((a,b)=>new Date(a.start_time)-new Date(b.start_time)).forEach(a=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="py-2 px-4">${new Date(a.start_time).toLocaleDateString('ru-RU')}</td>
+                  <td class="py-2 px-4">${a.start_time.substring(11,16)}</td>
+                  <td class="py-2 px-4">${a.master_name}</td>
+                  <td class="py-2 px-4">${a.client_name}</td>`;
+    const td=document.createElement('td');td.className='py-2 px-4 text-right';
+    if(a.master_id===me.id){
+      const b=document.createElement('button');b.textContent='×';b.className='text-red-600';
+      b.onclick=async()=>{await deleteApp(a.id);refresh();};
+      td.appendChild(b);
+    }
+    tr.appendChild(td);body.appendChild(tr);
+  });
+}
+
+/* ───── форма добавления */
+q('#add-form').onsubmit = async e=>{
+  e.preventDefault();
+  const date=q('#date-picker').value;
+  const time=q('#time').value;
+  const dur =parseInt(q('#dur').value);
+  const client=q('#client').value.trim();
+  if(!client||!time||!dur) return;
+  try{
+    await addApp({client_name:client,start_time:`${date}T${time}:00`,duration_minutes:dur});
+    e.target.reset();refresh();
+  }catch(err){
+    q('#err').textContent = err.response?.data?.detail||'Ошибка';
+    q('#err').classList.remove('hidden');
+    setTimeout(()=>q('#err').classList.add('hidden'),3000);
+  }
+};
+q('#date-picker').onchange = refresh;
+
+/* ───── основной запуск */
+async function refresh(){
+  const apps = await fetchApps();
+  renderSchedule(apps);
+  renderRecords(apps);
+}
+function initApp(){
+  q('#login-screen').classList.add('hidden');
+  q('#app').classList.remove('hidden');
+  q('#welcome').textContent=`Здравствуйте, ${me.name}!`;
+  q('#my-login').textContent=me.login;
+  q('#my-color').style.background=COLORS[(me.id-1)%4];
+  q('#date-picker').value=new Date().toISOString().split('T')[0];
+  refresh();
+}
+if(token&&me){initApp()}
+</script>
+</body>
+</html>
